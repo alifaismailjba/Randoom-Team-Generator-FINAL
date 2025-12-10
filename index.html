@@ -1,40 +1,236 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Random Team Generator</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <h1>Random Team Generator</h1>
-    <label for="names">Masukkan nama-nama (satu per baris):</label>
-    <textarea id="names" rows="10" placeholder="Contoh:
-Alice
-Bob
-Charlie
-Diana"></textarea>
-    
-    <label for="numTeams">Jumlah tim:</label>
-    <input type="number" id="numTeams" min="1" value="2">
-    
-    <label for="teamNames">Nama tim (opsional, pisah dengan koma, misal: Tim A, Tim B):</label>
-    <input type="text" id="teamNames" placeholder="Tim A, Tim B, Tim C">
-    
-    <button onclick="generateTeams()">Generate Teams</button>
-    
-    <div id="result"></div>
-    
-    <!-- Section untuk menambah nama tambahan -->
-    <div id="addSection">
-        <h3>Tambah Nama Tambahan ke Tim</h3>
-        <label for="additionalNames">Masukkan nama-nama tambahan (satu per baris):</label>
-        <textarea id="additionalNames" rows="5" placeholder="Contoh:
-Eve
-Frank"></textarea>
-        <button onclick="addNamesToTeams()">Add Names to Teams</button>
-    </div>
+let currentTeams = [];
+let currentTeamNames = [];
 
-    <script src="script.js"></script>
-</body>
-</html>
+// Update character counts
+document.getElementById('names').addEventListener('input', function() {
+    const names = this.value.trim().split('\n').filter(name => name.trim());
+    document.getElementById('nameCount').textContent = `${names.length} nama`;
+});
+
+document.getElementById('additionalNames').addEventListener('input', function() {
+    const names = this.value.trim().split('\n').filter(name => name.trim());
+    document.getElementById('additionalCount').textContent = `${names.length} nama`;
+});
+
+// Team count buttons
+function changeTeamCount(delta) {
+    const input = document.getElementById('numTeams');
+    let value = parseInt(input.value) + delta;
+    if (value < 1) value = 1;
+    if (value > 10) value = 10;
+    input.value = value;
+}
+
+// Generate teams
+function generateTeams() {
+    const namesInput = document.getElementById('names').value.trim();
+    const numTeams = parseInt(document.getElementById('numTeams').value);
+    const teamNamesInput = document.getElementById('teamNames').value.trim();
+    
+    if (!namesInput || numTeams < 1) {
+        showNotification('Masukkan nama dan jumlah tim yang valid.', 'error');
+        return;
+    }
+    
+    const names = namesInput.split('\n').map(name => name.trim()).filter(name => name);
+    if (names.length < numTeams) {
+        showNotification('Jumlah nama harus lebih banyak dari jumlah tim.', 'error');
+        return;
+    }
+    
+    // Custom team names or default
+    currentTeamNames = teamNamesInput ? 
+        teamNamesInput.split(',').map(name => name.trim()).filter(name => name) : [];
+    
+    if (currentTeamNames.length < numTeams) {
+        for (let i = currentTeamNames.length; i < numTeams; i++) {
+            currentTeamNames.push(`Tim ${i + 1}`);
+        }
+    }
+    
+    // Shuffle names
+    const shuffled = [...names].sort(() => Math.random() - 0.5);
+    
+    // Distribute to teams
+    currentTeams = Array.from({ length: numTeams }, () => []);
+    shuffled.forEach((name, index) => {
+        currentTeams[index % numTeams].push(name);
+    });
+    
+    // Display results
+    displayTeams();
+    
+    // Show sections
+    document.getElementById('resultsSection').style.display = 'block';
+    document.getElementById('addSection').style.display = 'block';
+    
+    showNotification('Tim berhasil dibuat!', 'success');
+}
+
+// Display teams with nice UI
+function displayTeams() {
+    const resultDiv = document.getElementById('result');
+    let totalMembers = 0;
+    
+    let html = '';
+    currentTeams.forEach((team, i) => {
+        totalMembers += team.length;
+        html += `
+            <div class="team-card">
+                <div class="team-header">
+                    <div class="team-name">${currentTeamNames[i]}</div>
+                    <div class="team-count">${team.length} orang</div>
+                </div>
+                <ul class="member-list">
+                    ${team.map(member => `
+                        <li>
+                            <i class="fas fa-user"></i>
+                            <span>${member}</span>
+                        </li>
+                    `).join('')}
+                </ul>
+            </div>
+        `;
+    });
+    
+    resultDiv.innerHTML = html;
+    
+    // Update stats
+    document.getElementById('totalMembers').textContent = totalMembers;
+    document.getElementById('totalTeams').textContent = currentTeams.length;
+    document.getElementById('avgPerTeam').textContent = 
+        Math.round((totalMembers / currentTeams.length) * 10) / 10;
+}
+
+// Add names to existing teams
+function addNamesToTeams() {
+    const additionalInput = document.getElementById('additionalNames').value.trim();
+    
+    if (!additionalInput || currentTeams.length === 0) {
+        showNotification('Masukkan nama tambahan dan pastikan tim sudah di-generate.', 'error');
+        return;
+    }
+    
+    const additionalNames = additionalInput.split('\n').map(name => name.trim()).filter(name => name);
+    if (additionalNames.length === 0) {
+        showNotification('Tidak ada nama tambahan yang valid.', 'error');
+        return;
+    }
+    
+    // Shuffle additional names and add to teams
+    const shuffledAdditional = [...additionalNames].sort(() => Math.random() - 0.5);
+    shuffledAdditional.forEach((name, index) => {
+        currentTeams[index % currentTeams.length].push(name);
+    });
+    
+    // Update display
+    displayTeams();
+    
+    // Clear input
+    document.getElementById('additionalNames').value = '';
+    document.getElementById('additionalCount').textContent = '0 nama';
+    
+    showNotification(`${additionalNames.length} nama berhasil ditambahkan!`, 'success');
+}
+
+// Regenerate all teams
+function regenerateTeams() {
+    if (confirm('Apakah Anda yakin ingin mengacak ulang semua tim?')) {
+        generateTeams();
+    }
+}
+
+// Copy results to clipboard
+function copyResults() {
+    if (currentTeams.length === 0) {
+        showNotification('Belum ada tim yang dibuat.', 'error');
+        return;
+    }
+    
+    let text = '';
+    currentTeams.forEach((team, i) => {
+        text += `${currentTeamNames[i]}:\n`;
+        team.forEach(member => {
+            text += `- ${member}\n`;
+        });
+        text += '\n';
+    });
+    
+    navigator.clipboard.writeText(text).then(() => {
+        showNotification('Hasil berhasil disalin ke clipboard!', 'success');
+    }).catch(err => {
+        showNotification('Gagal menyalin ke clipboard.', 'error');
+        console.error('Copy failed:', err);
+    });
+}
+
+// Show notification
+function showNotification(message, type = 'info') {
+    // Remove existing notification
+    const existing = document.querySelector('.notification');
+    if (existing) existing.remove();
+    
+    // Create notification
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : 
+                         type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+        <span>${message}</span>
+    `;
+    
+    // Add styles
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${type === 'success' ? '#4CAF50' : 
+                    type === 'error' ? '#f44336' : '#2196F3'};
+        color: white;
+        padding: 15px 25px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        z-index: 1000;
+        animation: slideInRight 0.3s ease;
+    `;
+    
+    // Add animation
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOutRight {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+    `;
+    document.head.appendChild(style);
+    
+    document.body.appendChild(notification);
+    
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+        notification.style.animation = 'slideOutRight 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+// Add enter key support
+document.addEventListener('DOMContentLoaded', function() {
+    // Enter key in textarea adds new line instead of submitting
+    document.getElementById('names').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            document.getElementById('numTeams').focus();
+        }
+    });
+    
+    // Example data for quick testing
+    document.getElementById('names').value = "Andi\nBudi\nCitra\nDian\nEka\nFajar\nGita\nHendra";
+    document.getElementById('nameCount').textContent = "8 nama";
+});
