@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random Team Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        textarea, input, button {
+            display: block;
+            width: 100%;
+            margin: 10px 0;
+            padding: 10px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            white-space: pre-wrap;
+        }
+        #addSection {
+            display: none; /* Sembunyikan sampai tim di-generate */
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Random Team Generator</h1>
+    <label for="names">Masukkan nama-nama (satu per baris):</label>
+    <textarea id="names" rows="10" placeholder="Contoh:
+Alice
+Bob
+Charlie
+Diana"></textarea>
+    
+    <label for="numTeams">Jumlah tim:</label>
+    <input type="number" id="numTeams" min="1" value="2">
+    
+    <label for="teamNames">Nama tim (opsional, pisah dengan koma, misal: Tim A, Tim B):</label>
+    <input type="text" id="teamNames" placeholder="Tim A, Tim B, Tim C">
+    
+    <button onclick="generateTeams()">Generate Teams</button>
+    
+    <div id="result"></div>
+    
+    <!-- Section untuk menambah nama tambahan -->
+    <div id="addSection">
+        <h3>Tambah Nama Tambahan ke Tim</h3>
+        <label for="additionalNames">Masukkan nama-nama tambahan (satu per baris):</label>
+        <textarea id="additionalNames" rows="5" placeholder="Contoh:
+Eve
+Frank"></textarea>
+        <button onclick="addNamesToTeams()">Add Names to Teams</button>
+    </div>
+
+    <script>
+        let currentTeams = []; // Menyimpan tim saat ini
+        let currentTeamNames = []; // Menyimpan nama tim saat ini
+
+        function generateTeams() {
+            const namesInput = document.getElementById('names').value.trim();
+            const numTeams = parseInt(document.getElementById('numTeams').value);
+            const teamNamesInput = document.getElementById('teamNames').value.trim();
+            const resultDiv = document.getElementById('result');
+            
+            if (!namesInput || numTeams < 1) {
+                resultDiv.textContent = 'Masukkan nama dan jumlah tim yang valid.';
+                return;
+            }
+            
+            const names = namesInput.split('\n').map(name => name.trim()).filter(name => name);
+            if (names.length < numTeams) {
+                resultDiv.textContent = 'Jumlah nama harus lebih banyak dari jumlah tim.';
+                return;
+            }
+            
+            // Ambil nama tim kustom atau gunakan default
+            currentTeamNames = teamNamesInput ? teamNamesInput.split(',').map(name => name.trim()).filter(name => name) : [];
+            if (currentTeamNames.length < numTeams) {
+                for (let i = currentTeamNames.length; i < numTeams; i++) {
+                    currentTeamNames.push(`Tim ${i + 1}`);
+                }
+            }
+            
+            // Acak nama
+            const shuffled = names.sort(() => Math.random() - 0.5);
+            
+            // Bagikan ke tim
+            currentTeams = Array.from({ length: numTeams }, () => []);
+            shuffled.forEach((name, index) => {
+                currentTeams[index % numTeams].push(name);
+            });
+            
+            // Tampilkan hasil
+            displayTeams();
+            
+            // Tampilkan section add
+            document.getElementById('addSection').style.display = 'block';
+        }
+
+        function addNamesToTeams() {
+            const additionalInput = document.getElementById('additionalNames').value.trim();
+            if (!additionalInput || currentTeams.length === 0) {
+                alert('Masukkan nama tambahan dan pastikan tim sudah di-generate.');
+                return;
+            }
+            
+            const additionalNames = additionalInput.split('\n').map(name => name.trim()).filter(name => name);
+            if (additionalNames.length === 0) {
+                alert('Tidak ada nama tambahan yang valid.');
+                return;
+            }
+            
+            // Acak nama tambahan dan tambahkan ke tim secara merata
+            const shuffledAdditional = additionalNames.sort(() => Math.random() - 0.5);
+            shuffledAdditional.forEach((name, index) => {
+                currentTeams[index % currentTeams.length].push(name);
+            });
+            
+            // Update hasil
+            displayTeams();
+            
+            // Kosongkan textarea
+            document.getElementById('additionalNames').value = '';
+        }
+
+        function displayTeams() {
+            const resultDiv = document.getElementById('result');
+            let output = '';
+            currentTeams.forEach((team, i) => {
+                output += `${currentTeamNames[i]}:\n${team.join('\n')}\n\n`;
+            });
+            resultDiv.textContent = output;
+        }
+    </script>
+</body>
+</html>
