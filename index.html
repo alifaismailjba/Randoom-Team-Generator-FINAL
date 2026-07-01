@@ -257,7 +257,7 @@ Henry"></textarea>
             
             currentTeams.forEach((team, i) => {
                 output += `📋 ${currentTeamNames[i]} (${team.length} anggota):\n`;
-                output += team.map(name => `   • ${name}`).join('\n');
+                output += team.map(name => `   ${name}`).join('\n');
                 output += '\n\n';
                 totalMembers += team.length;
             });
