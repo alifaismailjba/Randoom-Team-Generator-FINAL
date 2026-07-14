@@ -258,11 +258,14 @@ Henry"></textarea>
             currentTeams.forEach((team, i) => {
                 output += `📋 ${currentTeamNames[i]} (${team.length} anggota):\n`;
                 output += team.map(name => `   ${name}`).join('\n');
-                output += '\n\n';
+                output += '\n'; // Hanya satu newline
                 totalMembers += team.length;
             });
             
-            output += `━`.repeat(30) + '\n';
+            // Hapus newline terakhir
+            output = output.replace(/\n$/, '');
+            
+            output += `\n━`.repeat(30) + '\n';
             output += `📊 Total anggota: ${totalMembers} orang\n`;
             output += `🏆 Jumlah tim: ${currentTeams.length} tim`;
             
